@@ -1,19 +1,5 @@
-import React from 'react';
-import GooglePlacesAutoCompleteProvider, {
-  getGeoCode,
-} from 'google-places-auto-complete';
-import GooglePlacesAutoCompleteAdapter from 'wsr-google-places-auto-complete-adapter';
-import AddressInput from '../AddressInput';
-import formattedDistance from './formattedDistance';
-import RecentSearchesProvider from './RecentSearchesProvider';
-import ClockIcon from 'wix-ui-icons-common/ClockIcon';
-import Input from '../Input/Input';
-import Text from '../Text';
-import {
-  DropdownLayoutOption,
-  DropdownLayoutProps,
-  DropdownLayoutValueOption,
-} from '../DropdownLayout';
+import { DropdownLayoutOption, DropdownLayoutProps } from '../DropdownLayout';
+import * as React from 'react';
 
 /**
  * This document is a summary of the thinking process i went through when i was faced with a task to create the
@@ -48,29 +34,28 @@ import {
  * In the following suggested api, we can see our props divided into 3 different groups, we will see later how this
  * can provide us more clarity when composing with this component... */
 class AddressInput extends React.PureComponent<AddressInputProps> {} // This can be a Function Component as well using hooks
+
 interface AddressInputProps
   extends AddressInputBaseProps,
     AddressInputContentProps,
     AddressInputAppearanceProps {}
-
 // The bare minimum api we want to expose to our users that provides a working product (required)
 interface AddressInputBaseProps {
-  // Technical props for external testing and styling capabilities
   dataHook?: string;
   className?: string;
   initialValue?: string;
+  onChangeDebounceWait?: number;
   onSelect?(option: DropdownLayoutProps['onSelect']): void;
 }
 // Input and Options related props for managing internal values and getting updates upon changes.
 interface AddressInputContentProps {
   value?: string;
   onChange?: React.ChangeEventHandler<HTMLInputElement>;
-  onChangeDebounceWait?: number;
   onClear?: () => void;
   options?: DropdownLayoutOption[];
   status?: 'loading' | 'error' | 'warning';
 }
-// Visual related props, defining the component appearance & layout
+// Appearance related props, defining the component appearance & layout
 interface AddressInputAppearanceProps {
   size?: 'small' | 'medium' | 'large';
   roundInput?: boolean;
@@ -93,14 +78,18 @@ interface AddressInputAppearanceProps {
  * service into a provider component <GooglePlacesServiceProvider> which we will later use with our new <AddressInput/>
  * component to create the full <GoogleAddressInput/> solution.
  *
- * Let's see how an example of an api of such provider component...
+ * Let's see an example of an api of such provider component...
  * Note: this api is inspired by a 3rd-party hook named `use-places-autocomplete` (just in a render-props fashion),
  * to read more about it you can go to https://github.com/wellyshen/use-places-autocomplete
  * */
-class GooglePlacesServiceProvider extends React.PureComponent<{
+class GooglePlacesServiceProvider extends React.PureComponent<
+  GooglePlacesServiceProviderProps
+> {}
+
+interface GooglePlacesServiceProviderProps {
   initialValue?: string;
   children?(props: ServiceProviderProps): JSX.Element;
-}> {}
+}
 interface ServiceProviderProps {
   value?: string;
   setValue?(value: string): void;
@@ -116,27 +105,29 @@ interface Suggestion {} // This is the raw "suggestion" object returned from the
 
 /**
  * So far we manged to define two building blocks required for our solution, one is the UI-Layer component <AddressInput/>
- * and the second is the ServiceProvider component <GooglePlacesServiceProvider/>
+ * and the second is the ServiceProvider component <GooglePlacesServiceProvider/>.
  * It is easy to see that these components "speaks a different language", the provider is not familiar with the UI-Layer API
  * and vise-versa.
  *
  * GooglePlacesService  -/->  AddressInput (service-api !== component-props)
  *
- * Therefore, we will need a middleware/adapter to make the two talk to each other.
+ * Therefore, we will need a middleware to make the two talk to each other.
  * Clarification, when speaking about middleware i will refer to function components that can apply transformations and
  * make side-effects on the props as long as it does not require any state.
- * Adapter is similar just with the addition it can have state.
  */
 
 /**
- * <GooglePlacesServiceAdapter/>
+ * <GooglePlacesServiceMiddleware/>
  * a component that should act as a bridge between <GooglePlacesServiceProvider/> and <AddressInput/> components.
  * it should be familiar with the api of both ends and make sure that it is fulfilled correctly by receiving all the
  * the relevant data and handlers from the service provider and returning props that are aligned with UI-Layer props.
  *
  * Suggested api... */
-class GooglePlacesServiceAdapter extends React.PureComponent<AdapterProps> {}
-interface AdapterProps extends ServiceProviderProps {
+class GooglePlacesServiceMiddleware extends React.PureComponent<
+  MiddlewareProps
+> {}
+
+interface MiddlewareProps extends ServiceProviderProps {
   children?(props: AddressInputContentProps): JSX.Element;
 }
 /** Note that the `AddressInputAppearanceProps` are not part of the renderChildren signature, hence this is not the
@@ -147,37 +138,39 @@ interface AdapterProps extends ServiceProviderProps {
 /** <GooglePlacesAddressInput/>
  * Let's put everything we defined so far together,
  * this component should fulfil our first milestone in the end product, an <AddressInput/> component that is
- * "powered by Google". */
+ * powered by GooglePlace. */
 interface GooglePlacesAddressInputProps
   extends AddressInputBaseProps,
     AddressInputAppearanceProps {}
+
 const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInputProps> = ({
-  initialValue: string,
+  initialValue,
   ...restAddressInputProps
 }) => (
+  // @ts-ignore
   <GooglePlacesServiceProvider initialValue={initialValue}>
     {(serviceProviderProps: ServiceProviderProps) => (
-      <GooglePlacesServiceAdapter {...serviceProviderProps}>
+      <GooglePlacesServiceMiddleware {...serviceProviderProps}>
         {(addressInputContentProps: AddressInputContentProps) => (
           <AddressInput
             {...addressInputContentProps}
             {...restAddressInputProps}
           />
         )}
-      </GooglePlacesServiceAdapter>
+      </GooglePlacesServiceMiddleware>
     )}
   </GooglePlacesServiceProvider>
 );
 /**
- * This component is in fact taking the responsibility to fulfill the <AddressInput/> interface.
+ * This component is in fact taking the responsibility to implement the full <AddressInput/> interface.
  * `AddressInputBaseProps` & `AddressInputAppearanceProps` are being exposed outside for the consumer to provide while
- * the `AddressInputContentProps` is being served internally by our Provider/Adapter duo and is not open for modification
+ * the `AddressInputContentProps` is being served internally by our Provider/Middleware and is not open for modification
  * from outside, we will see later how we can still provide "extending" capabilities that can modify these props
  * for additional features.
  * Now, i can see why the code above can be eye pleasing to some while mind bending to others, it is just for
  * demonstration purposes to shows the separation of concerns between all of our building blocks and the props
  * composition.
- * We can always consolidate the Provider/Adapter into a single component <GooglePlacesProvider/> resulting a code that
+ * We can always consolidate the Provider/Middleware into a single component <GooglePlacesProvider/> resulting a code that
  * would look like...
  *
  * const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInputProps> =
@@ -192,9 +185,9 @@ const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInput
  */
 /*---------------------------------------------------------------------------------------------------------------------*/
 /**
- * To conclude so far, we manged to split our problem into three parts, each one has a clear definition of responsibility
- * and a declared way to connect with the others, Provider -> Adapter -> UI.
- * The resulting component can display an input on the screen and provide auto complete suggestions for address accordingly.
+ * To conclude, we manged to split our problem into three parts, each one has a clear definition of responsibility
+ * and a declared way to connect with the others, Provider -> Middleware -> UI.
+ * The resulting component can display an input to the screen and provide auto complete suggestions for address accordingly.
  * In the next part we will see what type of products we can build with it and which additional building blocks we will
- * need to create to accommodate the new products needs...
+ * need to implement to accommodate the new needs...
  */

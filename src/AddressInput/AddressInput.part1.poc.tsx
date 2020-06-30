@@ -110,7 +110,7 @@ interface Suggestion {} // This is the raw "suggestion" object returned from the
 /**
  * So far we manged to define two building blocks required for our solution, one is the UI-Layer component <AddressInput/>
  * and the second is the ServiceProvider component <GooglePlacesServiceProvider/>.
- * It is easy to see that these components don't "speaks" the same language, the provider is not familiar with the
+ * It is easy to see that these components don't "speak" the same language, the provider is not familiar with the
  * UI-Layer API and vise-versa.
  *
  * GooglePlacesService  -/->  AddressInput (service-api !== component-props)
@@ -139,8 +139,8 @@ interface AdapterProps extends ServiceProviderProps {
 /*---------------------------------------------------------------------------------------------------------------------*/
 
 /** <GooglePlacesAddressInput/>
- * Let's put everything we defined so far together,
- * this component should fulfil our first milestone in the end product, an <AddressInput/> component that is
+ * Let's put everything we defined so far together.
+ * This component should fulfil our first milestone in the end product, an <AddressInput/> component that is
  * powered by Google Places. */
 interface GooglePlacesAddressInputProps
   extends AddressInputBaseProps,
@@ -150,7 +150,6 @@ const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInput
   initialValue,
   ...restAddressInputProps
 }) => (
-  // @ts-ignore
   <GooglePlacesServiceProvider initialValue={initialValue}>
     {serviceProviderProps => (
       <GooglePlacesServiceAdapter {...serviceProviderProps}>
@@ -171,7 +170,7 @@ const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInput
  * from outside, we will see later how we can still provide "extending" capabilities that can modify these props
  * for additional features.
  * Now, i can see why the code above can be eye pleasing to some while mind bending to others, it is just for
- * demonstration purposes to shows the separation of concerns between all of our building blocks and the props
+ * demonstration purposes to show the separation of concerns between all of our building blocks and the props
  * composition.
  * We can always consolidate the Provider/Adapter into a single component <GooglePlacesProvider/> resulting a code that
  * would look like...
@@ -191,7 +190,8 @@ const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInput
 /**
  * To conclude, we manged to split our problem into three parts, each one has a clear definition of responsibility
  * and a declared way to connect with the others, Provider -> Adapter -> UI.
- * The resulting component can display an input to the screen and provide auto complete suggestions for address accordingly.
+ * The resulting component can display an input to the screen and provide auto complete suggestions for addresses
+ * provided from the Google Places api.
  * In the next part we will see what type of products we can build with it and which additional building blocks we will
  * need to implement to accommodate the new needs...
  */

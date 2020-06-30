@@ -1,4 +1,4 @@
-// Continue here...
+// Part 2 - This file is a MESS, do not read it yet since it holds outdated code examples and probably will be re-written
 
 /*
  *

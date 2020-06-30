@@ -19,27 +19,23 @@ import * as React from 'react';
  * building a marionette, i need it to be able to perform the "movements" required but i am not it's puppeteer.
  */
 
+/*---------------------------------------------------------------------------------------------------------------------*/
+
 /**
  * <AddressInput/>
  * This is our "marionette" component, it's responsibility is to follow the product visual definitions and behaviour
  * guidelines, this way any consumer that wishes to build it's own address lookup solution will be able to reuse it and
  * only take care of his specific use cases.
  *
- * Due to that, we can already identify that some parts of this component must be strictly defined and others might provide
- * some flexibility to the consumer to alter the final result.
- * There is no defined formula to identify these different parts, usually i'll try to look on each piece of the component
- * and ask myself "is that how is should look/behave for all consumers? or only for some..." in case the answer is not trivial
- * try taking it with you UX designer or product manager to help you figuring it out.
- *
  * In the following suggested api, we can see our props divided into 3 different groups, we will see later how this
- * can provide us more clarity when composing with this component... */
+ * can provide us clarity when composing with this component... */
 class AddressInput extends React.PureComponent<AddressInputProps> {} // This can be a Function Component as well using hooks
 
 interface AddressInputProps
   extends AddressInputBaseProps,
     AddressInputContentProps,
     AddressInputAppearanceProps {}
-// The bare minimum api we want to expose to our users that provides a working product (required)
+// The bare minimum api we want to expose to our users that provides a usable product (required)
 interface AddressInputBaseProps {
   dataHook?: string;
   className?: string;
@@ -73,14 +69,22 @@ interface AddressInputAppearanceProps {
 /*---------------------------------------------------------------------------------------------------------------------*/
 
 /**
+ * So we used the spec we got to define our first building block, however, this is not enough in order to build the
+ * product we were requested.
+ * Luckily, we don't need a detailed spec to realize that this component will need to get it's info from some kind of
+ * location service provider, Google Places is a good use case since it is what we currently use in our old component
+ * and probably we will need to support it in the new one as well. Let see how such a provider can look like... */
+
+/**
  * <GooglePlacesServiceProvider/>
  * Google Places is a service that provides autocomplete suggestions for a given user input, we want to encapsulate this
  * service into a provider component <GooglePlacesServiceProvider> which we will later use with our new <AddressInput/>
  * component to create the full <GoogleAddressInput/> solution.
  *
- * Let's see an example of an api of such provider component...
- * Note: this api is inspired by a 3rd-party hook named `use-places-autocomplete` (just in a render-props fashion),
- * to read more about it you can go to https://github.com/wellyshen/use-places-autocomplete
+ * Note: This api is inspired by a 3rd-party hook named `use-places-autocomplete` (just in a render-props fashion).
+ * I am not suggesting that all location providers should comply with this api, we will need to be able to support
+ * different api signatures and we will address it later.
+ * To read more about this specific one you can go to https://github.com/wellyshen/use-places-autocomplete
  * */
 class GooglePlacesServiceProvider extends React.PureComponent<
   GooglePlacesServiceProviderProps
@@ -106,28 +110,27 @@ interface Suggestion {} // This is the raw "suggestion" object returned from the
 /**
  * So far we manged to define two building blocks required for our solution, one is the UI-Layer component <AddressInput/>
  * and the second is the ServiceProvider component <GooglePlacesServiceProvider/>.
- * It is easy to see that these components "speaks a different language", the provider is not familiar with the UI-Layer API
- * and vise-versa.
+ * It is easy to see that these components don't "speaks" the same language, the provider is not familiar with the
+ * UI-Layer API and vise-versa.
  *
  * GooglePlacesService  -/->  AddressInput (service-api !== component-props)
  *
- * Therefore, we will need a middleware to make the two talk to each other.
- * Clarification, when speaking about middleware i will refer to function components that can apply transformations and
- * make side-effects on the props as long as it does not require any state.
+ * Therefore, we will need an adapter to make the two talk to each other.
+ * Clarification, when speaking about adapters i will refer to function components that receive one type of api signature
+ * and return an different type of api-signature by applying transformations to the received props.
+ * These adapters should be pure, hence, shouldn't hold any state or perform side-effects.
  */
 
 /**
- * <GooglePlacesServiceMiddleware/>
+ * <GooglePlacesServiceAdapter/>
  * a component that should act as a bridge between <GooglePlacesServiceProvider/> and <AddressInput/> components.
  * it should be familiar with the api of both ends and make sure that it is fulfilled correctly by receiving all the
  * the relevant data and handlers from the service provider and returning props that are aligned with UI-Layer props.
  *
  * Suggested api... */
-class GooglePlacesServiceMiddleware extends React.PureComponent<
-  MiddlewareProps
-> {}
+class GooglePlacesServiceAdapter extends React.PureComponent<AdapterProps> {}
 
-interface MiddlewareProps extends ServiceProviderProps {
+interface AdapterProps extends ServiceProviderProps {
   children?(props: AddressInputContentProps): JSX.Element;
 }
 /** Note that the `AddressInputAppearanceProps` are not part of the renderChildren signature, hence this is not the
@@ -138,7 +141,7 @@ interface MiddlewareProps extends ServiceProviderProps {
 /** <GooglePlacesAddressInput/>
  * Let's put everything we defined so far together,
  * this component should fulfil our first milestone in the end product, an <AddressInput/> component that is
- * powered by GooglePlace. */
+ * powered by Google Places. */
 interface GooglePlacesAddressInputProps
   extends AddressInputBaseProps,
     AddressInputAppearanceProps {}
@@ -149,44 +152,45 @@ const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInput
 }) => (
   // @ts-ignore
   <GooglePlacesServiceProvider initialValue={initialValue}>
-    {(serviceProviderProps: ServiceProviderProps) => (
-      <GooglePlacesServiceMiddleware {...serviceProviderProps}>
-        {(addressInputContentProps: AddressInputContentProps) => (
+    {serviceProviderProps => (
+      <GooglePlacesServiceAdapter {...serviceProviderProps}>
+        {addressInputContentProps => (
           <AddressInput
             {...addressInputContentProps}
             {...restAddressInputProps}
           />
         )}
-      </GooglePlacesServiceMiddleware>
+      </GooglePlacesServiceAdapter>
     )}
   </GooglePlacesServiceProvider>
 );
 /**
  * This component is in fact taking the responsibility to implement the full <AddressInput/> interface.
  * `AddressInputBaseProps` & `AddressInputAppearanceProps` are being exposed outside for the consumer to provide while
- * the `AddressInputContentProps` is being served internally by our Provider/Middleware and is not open for modification
+ * the `AddressInputContentProps` is being served internally by our Provider/Adapter and is not open for modification
  * from outside, we will see later how we can still provide "extending" capabilities that can modify these props
  * for additional features.
  * Now, i can see why the code above can be eye pleasing to some while mind bending to others, it is just for
  * demonstration purposes to shows the separation of concerns between all of our building blocks and the props
  * composition.
- * We can always consolidate the Provider/Middleware into a single component <GooglePlacesProvider/> resulting a code that
+ * We can always consolidate the Provider/Adapter into a single component <GooglePlacesProvider/> resulting a code that
  * would look like...
- *
- * const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInputProps> =
- *   initialValue: string
- *   ...restAddressInputPro
- * }) =>
- *   <GooglePlacesProvider initialValue={initialValue}/>
- *     {(addressInputContentProps: AddressInputContentProps) =>
- *       <AddressInput {...addressInputContentProps} {...restAddressInputProps}/>
- *   </GooglePlacesProvider/>
- * );
- */
+
+const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInputProps> = ({
+  initialValue,
+  ...restAddressInputProps
+}) => (
+  <GooglePlacesProvider initialValue={initialValue}>
+    {addressInputContentProps => (
+      <AddressInput {...addressInputContentProps} {...restAddressInputProps} />
+    )}
+  </GooglePlacesProvider>
+);
 /*---------------------------------------------------------------------------------------------------------------------*/
+
 /**
  * To conclude, we manged to split our problem into three parts, each one has a clear definition of responsibility
- * and a declared way to connect with the others, Provider -> Middleware -> UI.
+ * and a declared way to connect with the others, Provider -> Adapter -> UI.
  * The resulting component can display an input to the screen and provide auto complete suggestions for address accordingly.
  * In the next part we will see what type of products we can build with it and which additional building blocks we will
  * need to implement to accommodate the new needs...

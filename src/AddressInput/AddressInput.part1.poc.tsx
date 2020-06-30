@@ -72,8 +72,9 @@ interface AddressInputAppearanceProps {
  * So we used the spec we got to define our first building block, however, this is not enough in order to build the
  * product we were requested.
  * Luckily, we don't need a detailed spec to realize that this component will need to get it's info from some kind of
- * location service provider, Google Places is a good use case since it is what we currently use in our old component
- * and probably we will need to support it in the new one as well. Let see how such a provider can look like... */
+ * location service provider, Google Places (https://cloud.google.com/maps-platform/places) is a good use case since
+ * it is what we currently use in our old component and probably we will need to support it in the new one as well.
+ * Let see how such a provider can look like... */
 
 /**
  * <GooglePlacesServiceProvider/>
@@ -82,9 +83,10 @@ interface AddressInputAppearanceProps {
  * component to create the full <GoogleAddressInput/> solution.
  *
  * Note: This api is inspired by a 3rd-party hook named `use-places-autocomplete` (just in a render-props fashion).
- * I am not suggesting that all location providers should comply with this api, we will need to be able to support
- * different api signatures and we will address it later.
- * To read more about this specific one you can go to https://github.com/wellyshen/use-places-autocomplete
+ * You don't really have to understand it to continue reading, i only placed it here so we will have a "mock" example
+ * to an api that "someone else" defined for us and it is out of our control.
+ * This also "hints" us that in the final solution we will need to be able to support this use case, we will see how later.
+ * (To read more about this specific one you can go to https://github.com/wellyshen/use-places-autocomplete)
  * */
 class GooglePlacesServiceProvider extends React.PureComponent<
   GooglePlacesServiceProviderProps
@@ -103,7 +105,10 @@ interface ServiceProviderProps {
   };
   clearSuggestions?(): void;
 }
-interface Suggestion {} // This is the raw "suggestion" object returned from the google places service, untyped to reduce noise
+interface Suggestion {} // This is the raw "suggestion" object returned from the google places service, it holds minimal
+// information about the suggestion location just so we will be able to render UI out of it.
+// We will include it as part of the provided value upon `onSelect`
+// It is untyped here just to reduce noise.
 
 /*---------------------------------------------------------------------------------------------------------------------*/
 

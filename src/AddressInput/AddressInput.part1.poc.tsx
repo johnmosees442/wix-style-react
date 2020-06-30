@@ -117,7 +117,7 @@ interface Suggestion {} // This is the raw "suggestion" object returned from the
  *
  * Therefore, we will need an adapter to make the two talk to each other.
  * Clarification, when speaking about adapters i will refer to function components that receive one type of api signature
- * and return an different type of api-signature by applying transformations to the received props.
+ * and return a different type of api-signature by applying transformations to the received props.
  * These adapters should be pure, hence, shouldn't hold any state or perform side-effects.
  */
 
@@ -134,7 +134,7 @@ interface AdapterProps extends ServiceProviderProps {
   children?(props: AddressInputContentProps): JSX.Element;
 }
 /** Note that the `AddressInputAppearanceProps` are not part of the renderChildren signature, hence this is not the
- * responsibility of the adapter, we should be provided them to the component independently. */
+ * responsibility of the adapter, we should be providing them to the component independently. */
 
 /*---------------------------------------------------------------------------------------------------------------------*/
 

@@ -41,6 +41,9 @@
       "docs"
     ]
   },
+  "Bounce": {
+    "path": "src/Bounce"
+  },
   "Box": {
     "path": "src/Box"
   },

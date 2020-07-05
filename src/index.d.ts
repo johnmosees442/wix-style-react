@@ -424,4 +424,8 @@ export { default as SortableGrid } from './SortableGrid';
 export * from './SortableGrid';
 
 export { default as dndStyles } from './dnd-styles';
+
+export { default as Bounce } from './Bounce';
+export * from './Bounce';
+
 export * from './dnd-styles';

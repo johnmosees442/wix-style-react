@@ -166,3 +166,4 @@ export { default as Timeline } from './Timeline';
 export { default as ComposerSidebar } from './ComposerSidebar';
 export { default as SortableGrid } from './SortableGrid';
 export { default as dndStyles } from './dnd-styles';
+export { default as Bounce } from './Bounce';

@@ -1,25 +1,71 @@
+:vars {
+  enterEasing: cubic-bezier(0, 0, 0.2, 1);
+  enterDuration: 150ms;
+}
+
+/* https://easings.net/#easeOutElastic */
+@keyframes easeOutElastic {
+  0% {
+    transform: scale(1) translateX(0%);
+    opacity: 1;
+  }
+
+  16% {
+    transform: scale(-0.32) translateX(-132.27%);
+    opacity: -0.32;
+  }
+
+  28% {
+    transform: scale(0.13) translateX(-86.88%);
+    opacity: 0.13;
+  }
+
+  44% {
+    transform: scale(-0.05) translateX(-104.63%);
+    opacity: -0.05;
+  }
+
+  59% {
+    transform: scale(0.02) translateX(-98.36%);;
+    opacity: 0.02;
+  }
+
+  73% {
+    transform: scale(-0.01) translateX(-100.58%);
+    opacity: -0.01;
+  }
+
+  88% {
+    transform: scale(0) translateX(-99.8%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(0) translateX(-100%);
+    opacity: 0;
+  }
+}
+
 .root {}
 
 .animateContent{}
 
+
 .enter {
-  transform: scale(1.5);
+  transform: scale(1);
 }
 
 .enterActive {
-  transform: scale(1);
-  transition: transform 300ms;
+  transform: scale(1.7);
+  transition: transform 150ms;
 }
 
-.enterDone {}
-
 .exit {
-  transform: scale(1);
+  animation-name: easeOutElastic;
+  animation-duration: 400ms;
 }
 
 .exitActive {
-  transform: scale(1.5);
-  transition: transform 300ms;
+  animation-name: easeOutElastic;
+  animation-duration: 400ms;
 }
-
-.exitDone {}

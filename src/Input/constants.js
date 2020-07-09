@@ -5,6 +5,5 @@ export const dataHooks = {
 export const SIZES = {
   small: 'small',
   medium: 'medium',
-  normal: 'normal',
   large: 'large',
 };

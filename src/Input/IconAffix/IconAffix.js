@@ -1,27 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import classNames from 'classnames';
-
-import styles from './IconAffix.scss';
 import InputConsumer from '../InputConsumer';
+import Box from '../../Box';
+import classes from './IconAffix.st.css';
 
 const IconAffix = ({ children, dataHook }) => (
   <InputConsumer consumerCompName={IconAffix.displayName}>
-    {({ size, inSuffix, onInputClicked, disabled }) => {
-      const className = classNames(styles.icon, {
-        [styles.inSuffix]: inSuffix,
-        [styles.disabled]: disabled,
-      });
+    {({ size, onInputClicked, disabled }) => {
       return (
-        <div
+        <Box
+          {...classes('root', { size, disabled })}
           onClick={!disabled ? onInputClicked : undefined}
-          className={className}
           data-hook={dataHook}
         >
           {React.cloneElement(children, {
             size: size === 'small' ? '18px' : '24px',
           })}
-        </div>
+        </Box>
       );
     }}
   </InputConsumer>

@@ -1,0 +1,37 @@
+:import {
+  -st-from: '../../Foundation/stylable/colors.st.css';
+  -st-named: B10, D10-30;
+}
+
+.root {
+  margin: auto 6px;
+  user-select: none;
+}
+
+.up {
+  -st-states: disabled;
+}
+
+.down {
+  -st-states: disabled;
+}
+
+.up,
+.down {
+  padding: 5px 0;
+  color: value(B10);
+  cursor: pointer;
+}
+
+.up svg,
+.down svg {
+  display: block;
+  width: 10px;
+  height: 5px;
+}
+
+.up:disabled,
+.down:disabled {
+  cursor: not-allowed;
+  color: value(D10-30);
+}

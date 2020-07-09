@@ -1,0 +1,15 @@
+:import {
+  -st-from: '../../Foundation/stylable/colors.st.css';
+  -st-named: B10, D10-30;
+}
+
+.root {
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: value(B10);
+}
+
+.root:disabled {
+  color: valiue(D10-30);
+}

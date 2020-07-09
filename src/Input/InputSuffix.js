@@ -3,9 +3,10 @@ import PropTypes from 'prop-types';
 import DropDownArrow from 'wix-ui-icons-common/system/DropDownArrow';
 import CloseButton from '../CloseButton';
 import StatusIndicator from '../StatusIndicator';
-import styles from './Input.scss';
+import classes from './Input.st.css';
 import Box from '../Box';
 import { dataHooks } from './constants';
+import Affix from './Affix';
 
 const isFixVisible = fix => fix.isVisible;
 
@@ -37,43 +38,51 @@ const InputSuffix = ({
 }) => {
   const suffixes = [
     {
-      component: () => (
-        <Box margin={1} lineHeight="initial">
+      // Status Indicator
+      component: key => (
+        <Affix key={key}>
           <StatusIndicator
             dataHook={dataHooks.status}
             status={status}
             message={statusMessage}
             tooltipPlacement={tooltipPlacement}
           />
-        </Box>
+        </Affix>
       ),
       isVisible: suffixRules.inputStatusSuffix({ status, disabled }),
     },
     {
-      component: () => (
-        <div className={styles.clearButton}>
+      // Close Button
+      component: key => (
+        <Affix key={key}>
           <CloseButton
             dataHook="input-clear-button"
+            skin="standardFilled"
             size={clearButtonSize}
             onClick={onClear}
           />
-        </div>
+        </Affix>
       ),
       isVisible: suffixRules.clearButton({ isClearButtonVisible }),
     },
     {
-      component: () => suffix,
+      // Custom Suffix
+      component: key => React.cloneElement(suffix, { key }),
       isVisible: suffixRules.customSuffix({ suffix }),
     },
     {
-      component: () => (
-        <div
-          className={styles.menuArrow}
-          disabled={disabled}
-          onClick={onIconClicked}
-        >
-          <DropDownArrow />
-        </div>
+      // Dropdown Arrow
+      component: key => (
+        <Affix key={key} className={classes.menuArrow}>
+          <div
+            key={key}
+            className={classes.menuArrow}
+            disabled={disabled}
+            onClick={onIconClicked}
+          >
+            <DropDownArrow />
+          </div>
+        </Affix>
       ),
       isVisible: suffixRules.menuArrow({
         menuArrow,
@@ -83,13 +92,9 @@ const InputSuffix = ({
   ].filter(isFixVisible);
 
   return (
-    <div className={styles.suffixes}>
-      {suffixes.map((s, i) => (
-        <div key={i} className={styles.suffix}>
-          {s.component()}
-        </div>
-      ))}
-    </div>
+    <Box className={classes.suffixes}>
+      {suffixes.map((s, key) => s.component(key))}
+    </Box>
   );
 };
 

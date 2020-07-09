@@ -147,11 +147,12 @@ interface AdapterProps extends ServiceProviderProps {
  * Let's put everything we defined so far together.
  * This component should fulfil our first milestone in the end product, an <AddressInput/> component that is
  * powered by Google Places. */
-interface GooglePlacesAddressInputProps
+export interface GooglePlacesAddressInputProps
   extends AddressInputBaseProps,
-    AddressInputAppearanceProps {}
+    AddressInputAppearanceProps,
+    Omit<GooglePlacesServiceProviderProps, 'children'> {}
 
-const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInputProps> = ({
+export const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInputProps> = ({
   initialValue,
   ...restAddressInputProps
 }) => (
@@ -169,11 +170,12 @@ const GooglePlacesAddressInput: React.FunctionComponent<GooglePlacesAddressInput
   </GooglePlacesServiceProvider>
 );
 /**
- * This component is in fact taking the responsibility to implement the full <AddressInput/> interface.
- * `AddressInputBaseProps` & `AddressInputAppearanceProps` are being exposed outside for the consumer to provide while
- * the `AddressInputContentProps` is being served internally by our Provider/Adapter and is not open for modification
- * from outside, we will see later how we can still provide "extending" capabilities that can modify these props
- * for additional features.
+ * This component is in fact taking the responsibility to implement the full <AddressInput/> & <GooglePlacesServiceProvider/>
+ * props interface.
+ * `AddressInputBaseProps`, `AddressInputAppearanceProps` & `GooglePlacesServiceProviderProps` are being exposed outside
+ * for the consumer to provide the desired values while the `AddressInputContentProps` is being served internally by our
+ * Provider/Adapter and is not open for modification from outside, we will see later how we can still provide "extending"
+ * capabilities that can modify these props for additional features.
  * Now, i can see why the code above can be eye pleasing to some while mind bending to others, it is just for
  * demonstration purposes to show the separation of concerns between all of our building blocks and the props
  * composition.

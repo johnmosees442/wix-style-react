@@ -1,80 +1,127 @@
-// Part 2 - This file is a MESS, do not read it yet since it holds outdated code examples and probably will be re-written
-
-/*
- *
- * right from the bottom line, having an input that helps you locate an address quickly is nice,
- * but it is just the first building block for providing full product solutions to the users.
- *
- * Assume we have a WSR auto-complete input powered by google-places that returns minimal geoData of the selected address
- * "suggestion", let call it <GooglePlacesAutoCompleteInput/>
- *
- * What types of products can we build with it?
- * Note: Each component should provide only one additional capability (feature) to the final product!
- */
-
-/**
- * Example 1 - GoogleAddressInput
- *  Auto-complete input lookup for full address details
-
- *  This one is pretty simple, the information you get from the address "suggestion" object is very limited and you probably
- *  need more info to work with, a very common way to do it is to call google-geoCode service with the keys/latLong you got
- *  from the "suggestion".
- */
-// const GoogleAddressInput = ({ onSelect, ...restProps }) => {
-//   const handleSelect = async suggestion =>
-//     onSelect(await getGeoCode(suggestion));
-//   return (
-//     <GooglePlacesAutoCompleteInput onSelect={handleSelect} {...restProps} />
-//   );
-// };
-/**
- * In this example we see that <GoogleAddressInput/> "adopts" the propTypes api of <GooglePlacesAutoCompleteInput/>
- * and just taking over the `onSelect` handling in order to perform the lookup request for the geoCoded data.
- * This means that we gained all the customizations capabilities and safety of GooglePlacesAutoCompleteInput while we can
- * keep our focus on the added value this component provide.
- */
-
+import {
+  getGeoCode,
+  formattedDistance,
+  RecentSearchesProvider,
+  ClockIcon,
+  // @ts-ignore
+} from 'fake-helper-utilities';
+import * as React from 'react';
 import Text from '../Text';
-import React from 'react';
+import {
+  GooglePlacesAddressInput,
+  GooglePlacesAddressInputProps,
+} from './AddressInput.part1.poc';
+import Input from '../Input';
 
 /**
- * Example 2 - GoogleAddressInputWithDistance
- * Same as Example 1 with the addition of showing the distance of my device from each "suggestion".
+ * In the previous part we established 3 distinct pieces serving different goals, Provider => Adapter => UI.
+ * When we combine them together we get the component we wanted, a google places powered address input component.
  *
- * Here we need to interfere with something internal of GooglePlacesAutoCompleteInput, how it should render the options.
- * To the rescue comes <GooglePlacesAutoCompleteInput.Option/> compounded component that helps us to manipulate the option
- * layout within the boundaries defined by UX, this component is used internally by default unless specified differently.
- */
-const GoogleAddressInputWithDistance = props => (
-  <GoogleAddressInput // Reusing the component we showcased in Example 1
-    {...props}
-    withDistance // a flag that notifies the geoLocationService to provide this data when performing requests for suggestions.
-    renderOption={({ option }) => (
-      <GooglePlacesAutoCompleteInput.Option
-        option={option}
-        suffix={<Text>{formattedDistance(option.distance)}</Text>}
-      />
-    )}
-  />
-);
-/**
- * Here we allow the user to determine how to convert parts of the "suggestion" data into props, since we don't want him
- * to do it for all props the "suggestion" using a context consumer to fill in the missing props on his behalf.
- * This frees the developer from dealing with anything that is not related to his use case.
+ * However, having this component is not the end of the story, rather then just the beginning, in this part we will explore
+ * what types of products (other components) we can build with it, and what we will need to change in order to "extend"
+ * it without compromising the separation of concerns guided us so far.
+ *
+ * In the following examples, i will use `<GooglePlacesAddressInput/>` component defined in the end of `part1`, this
+ * is an AddressInput component pre-wired to GooglePlaces APIs and upon selection provides to the user the "suggestion"
+ * object returned from the service.
+ *
+ * Note: In each example we will try to add only one additional capability (feature) to the current implementation and by
+ * that gaining a new "product", this in done intentionally and will be explained in more details later.
  * */
 
 /**
- * Example 3 - GooglePlacesAutoCompleteInputWithRecentSearches
- * Showing the user the last X searches before he starts to type.
+ * Example 1 - `<GoogleAddressInput/>`
+ * The GooglePlaces service we used so far provides an api for address autocomplete purposes, this means that the info
+ * it provides for each address is minimal and not very useful coming to build an app with it.
+ * In this example we will show how we create a new component that uses `<GooglePlacesAddressInput/>` internally and
+ * combined with the Google GeoCode Service returns the full address geocode object.
+ * */
+const GoogleAddressInput: React.FunctionComponent<GooglePlacesAddressInputProps> = ({
+  onSelect,
+  ...restProps
+}) => {
+  const handleSelect = async suggestion =>
+    onSelect(await getGeoCode(suggestion)); // Assuming we have this method available for us
+  return <GooglePlacesAddressInput onSelect={handleSelect} {...restProps} />;
+};
+/**
+ * In this example we see that <GoogleAddressInput/> "adopts" the propTypes api of <GooglePlacesAddressInput/>
+ * and just taking over the `onSelect` handling in order to perform the lookup request for the geoCoded data.
+ * This means that we gained all the customizations capabilities of the lower level component while we can
+ * keep our focus on the added value this component provides.
+ * */
+/*---------------------------------------------------------------------------------------------------------------------*/
+
+/**
+ * Example 2 - `<GooglePlacesAddressInputWithDistanceProps/>`
+ * This one is a bit more tricky, we want to display the distance of my device from each "suggestion".
  *
- * To keep the business logic of managing the last searches separated we will use here a render-props provider
- * to do the heavy lifting for us, let's call it <RecentSearchesProvider/>
- */
+ * In order to achieve this we will need accomplish two things:
+ * 1. Indicate to the location service provider that we are interested in this type of information and provide our device
+ * location as part of the initialization of the service or the request for suggestions (depends on the service requirements).
+ * 2. Interfere with the way <GooglePlacesAddressInput/> renders its `options`, making sure it renders the new provided
+ * information in the option.
+ * */
+const GooglePlacesAddressInputWithDistance: React.FunctionComponent<GooglePlacesAddressInputProps> = ({
+  // @ts-ignore
+  withDistance,
+  ...restProps
+}) => {
+  return (
+    <GooglePlacesAddressInput
+      {...restProps}
+      // This answers the first requirement, notifying to the location service provider to fetch this data as well.
+      // Note that this it is essentially a new prop aimed for of the internal <GooglePlacesServiceProvider/> and we are
+      // counting on the component to pass it down correctly.
+      // @ts-ignore
+      withDistance
+      // This answers the second requirement, allowing the modification of the options props according to the provided data.
+      // Note that this is essentially a new prop of the internal <AddressInput/> component and we are counting on the
+      // component to pass it down correctly.
+      optionMiddleware={suggestion => ({
+        suffix:
+          (suggestion.distance_in_meters && (
+            <Text>{formattedDistance(suggestion.distance_in_meters)}</Text>
+          )) ||
+          '',
+      })}
+    />
+  );
+};
+/**
+ * Looking on the code above we can see how our new component <GooglePlacesAddressInputWithDistance/> is only dealing with
+ * adding this new capability to the final product and nothing more.
+ * While it follows successfully the "isolation of concerns" principle, we can already see that we needed to "modify" the
+ * Provider and the UI components in order to add this new capability (supporting `withDistance` & `optionRender`) and
+ * we need a 3rd component to wire everything together properly.
+ * This can be a bad sign moving forward with this practice since most products feature more than one capability and we
+ * want to make sure we end up with code that is easy to maintain and not the other way around.
+ *
+ * The main thing we can learn from this case is that we shouldn't mix different capabilities that are based on a single
+ * provider, especially when not all has access to the provider initialization.
+ * It might be better to add the distance capability to the layer that handles the provider data directly.
+ * */
+
+/*---------------------------------------------------------------------------------------------------------------------*/
+
+/**
+ * Example 3 - <GooglePlacesAddressInputWithRecentSearches/>
+ * Adding to the top of the "suggestion" list the last X addresses that the user searched.
+ *
+ * Since our main focus here is how we add new capabilities and not how we implement them we will just assume we have a
+ * <RecentSearchesProvider/> for managing the list of last searches.
+ *
+ * In order to achieve our goal, we will need to accomplish three things:
+ * 1. Initialize a `<RecentSearchesProvider/>` by passing it the data it needs.
+ * 2. Register to the `onSelect` callback in order to notify the provider upon a user selection.
+ * 3. Pass down to the component the list of options holding the recent searches
+ * */
 const GooglePlacesAutoCompleteInputWithRecentSearches = ({
   numOfRecentSearches,
   onSelect,
   ...restProps
 }) => (
+  // this takes care of the 1st requirement, initializing the provider
   <RecentSearchesProvider numOfRecentSearches={numOfRecentSearches}>
     {({ recentSearches, addSearch }) => {
       const handleSelect = async suggestion => {
@@ -82,11 +129,15 @@ const GooglePlacesAutoCompleteInputWithRecentSearches = ({
         onSelect(suggestion);
       };
       return (
-        <GooglePlacesAutoCompleteInput
+        <GooglePlacesAddressInput
           {...restProps}
+          // This one is the 2nd requirement, registering for onSelect
           onSelect={handleSelect}
+          // This is the 3rd one, we create the list of additional options we want
+          // @ts-ignore
           options={recentSearches.map(search => (
-            <GooglePlacesAutoCompleteInput.Option
+            // @ts-ignore
+            <GooglePlacesAddressInput.Option
               {...search}
               prefix={
                 <Input.IconAffix>
@@ -100,135 +151,20 @@ const GooglePlacesAutoCompleteInputWithRecentSearches = ({
     }}
   </RecentSearchesProvider>
 );
+/**
+ * In this example we see that we need to expose yet another prop in our `<GooglePlacesAddressInput/>` component, the
+ * `options` array, which is part of the `AddressInputContentProps` interface that wasn't exposed until now.
+ * This is another red flag for the need to find a better solution for our extendability problem.
+ * If we will need to keep on "modifying" our internal parts to fit more composition capabilities we in fact didn't
+ * reach our end goal of adding these capabilities in an isolated way.
+ * In the next part we will try to address exactly that by trying to identify a pattern that can accommodate these types
+ * of additions.
+ */
 
 /**
- * You can notice that since we need to preserve the "suggestion" object here and not the full-location object like provided
- * in Example 1 <GoogleAddressInput/> or 2 <GoogleAddressInputWithDistance/> we had to use <GooglePlacesAutoCompleteInput/>
- * directly. This is not ideal since now if we want to have recent-searches for those components we will need to refactor
- * them to use GooglePlacesAutoCompleteInputWithRecentSearches instead.
+ * Appendix.
  *
- * So the new GoogleAddressInput would look like...
- * */
-const GoogleAddressInputWithRecentSearches = ({ onSelect, restProps }) => {
-  const handleSelect = async suggestion =>
-    onSelect(await getGeoCode(suggestion));
-  return (
-    <GooglePlacesAutoCompleteInputWithRecentSearches
-      onSelect={handleSelect}
-      {...restProps}
-    />
-  );
-};
-
-/**
- * Check point so far.
- * We established a clear separation for different capabilities we want to enhance in the end-result
- * component. however, we notice that due to the "tree like" nature of component composition, every time we would like to
- * add another capability we will need to identify the "right" place it fits on the tree and refactor up any usages of the
- * wrapped component.
- * On top of that, we still need an elegant way to turn on/off capabilities while avoiding adding a ternary switch before
- * every render step.
- * */
-
-/**
- * GooglePlacesAutoCompleteInput
- * a component that should provide the user an auto-complete input for address suggestions and
- * return the `suggestion` object of the user selected suggestion
- * */
-const GooglePlacesAutoCompleteInput = ({
-  size,
-  roundInput,
-  optionsLayout,
-  showOptionsIcon,
-  initialValue,
-  onChangeDebounceWait,
-  onSelect,
-  onChange,
-  onClear,
-}) => (
-  /**
-   * GooglePlacesAutoCompleteProvider
-   * a component that should manage the interactions with the google api according to a changing input value.
-   * This component is just the `render-props` version of the `usePlacesAutocomplete` 3rd-party hook and it is here to
-   * play the role of a LocationService provider that has an api we want to integrate with.
-   * This part can be replaced with a `AtlasAutoCompleteProvider` for example while supporting a completely different api.
-   * (https://github.com/wellyshen/use-places-autocomplete)
-   * */
-  <GooglePlacesAutoCompleteProvider
-    requestOptions={{ input: initialValue }}
-    debounce={onChangeDebounceWait}
-  >
-    {({
-      value,
-      setValue,
-      suggestions = { data, status },
-      clearSuggestions,
-    }) => (
-      /**
-       * GooglePlacesAutoCompleteAdapter
-       * a component that should act as a bridge between the LocationProvider and the UI-Layer components.
-       * it should be familiar with the api of both ends and make sure that it is fulfilled correctly by receiving all the
-       * the relevant data and returning an api that is as close as possible to the UI-Layer.
-       * Every adapter is a custom implementation for each LocationProvider/UI-Layer tuple and not a generic tool that
-       * can be used for all, later on we might structure it better internally to facilitate common methods and
-       * lifecycle hooks so it will be easier to write more adapters.
-       *
-       * In this use case for example, `GooglePlacesAutoCompleteProvider` is performing an api call
-       * for every `setValue` invocation, this means that i can't just pass the provider's `setValue` method directly to the
-       * `AddressInput` `onChange` prop since it leads to `AddressInput` knowing stuff about this provider behaviour
-       * which isn't what we want. This is why we need the adapter to act as a middleman that knows how to prevent it
-       * (calling `setValue(description, false)`
-       * in this case). this leads to the fact that this specific adapter must control the input value as well which might
-       * not be necessary for other adapters in the future.
-       *
-       * Another example, since `GooglePlacesAutoCompleteProvider` is performing it's api call already debounced i want to
-       * prevent the `AddressInput` from doing another `debounce` action, this is why this adapter is returning an
-       * onChangeDebounceWait with the value of 0 to since it is familiar with the `AddressInput` api.
-       * */
-      <GooglePlacesAutoCompleteAdapter
-        // Provider Props
-        value={value}
-        setValue={setValue}
-        suggestions={data}
-        status={status}
-        clearSuggestions={clearSuggestions}
-        // AddressInput Props
-        onSelect={onSelect}
-        onChange={onChange}
-        onClear={onClear}
-      >
-        {({
-          value,
-          onChange,
-          onClear,
-          options,
-          onSelect,
-          status,
-          onChangeDebounceWait,
-        }) => (
-          <AddressInput
-            // AddressInput pass-through Props
-            size={size}
-            roundInput={roundInput}
-            optionsLayout={optionsLayout}
-            showOptionsIcon={showOptionsIcon}
-            // GooglePlacesAutoCompleteAdapter Props
-            initialValue={value}
-            onChange={onChange}
-            onClear={onClear}
-            options={options}
-            onSelect={onSelect}
-            status={status}
-            onChangeDebounceWait={onChangeDebounceWait}
-          />
-        )}
-      </GooglePlacesAutoCompleteAdapter>
-    )}
-  </GooglePlacesAutoCompleteProvider>
-);
-
-/**
- * Let't try to add a few product features and see if the api is good enough
+ * List of products
  * 1. Show last 5 searches.
  *    * Listen to `onSelect` changes and getting from the event the minimum set of data required for displaying it later
  *    as a "recent option"

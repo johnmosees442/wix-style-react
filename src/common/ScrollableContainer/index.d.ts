@@ -17,5 +17,11 @@ interface ScrollableContainerProps {
   onScrollChanged?(target: HTMLElement): void;
 }
 
+interface ScrollableContainerWrapperProps {
+  setupRef?(element: HTMLElement): void;
+}
+
+export declare const ScrollableContainerWrapper: React.FunctionComponent<ScrollableContainerWrapperProps>
+
 declare const ScrollableContainer: React.FunctionComponent<ScrollableContainerProps>;
 export default ScrollableContainer;

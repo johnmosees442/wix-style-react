@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 import { getScrollPositionY } from './scrollPositionLogic';
 import { extractDataAttributes } from '../../utils/extractAttributes';
+import { scrollThrottleWait as SCROLL_THROTTLE_WAIT } from './constants';
 
 const ScrollableContainer = forwardRef(function ScrollableContainer(
   {
@@ -116,7 +117,7 @@ ScrollableContainer.propTypes = {
 };
 
 ScrollableContainer.defaultProps = {
-  scrollThrottleWait: 100,
+  scrollThrottleWait: SCROLL_THROTTLE_WAIT,
 };
 
 export default ScrollableContainer;

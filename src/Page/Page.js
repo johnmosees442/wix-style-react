@@ -22,6 +22,8 @@ import {
   mainContainerMinWidthPx as GRID_MIN_WIDTH,
   mainContainerMaxWidthPx as GRID_MAX_WIDTH,
 } from '../Grid/constants';
+import { ScrollableContainerWrapper } from '../common/ScrollableContainer';
+import { scrollThrottleWait as SCROLL_THROTTLE_WAIT } from '../common/ScrollableContainer/constants';
 
 /*
  * Page structure without mini-header-overlay:
@@ -60,6 +62,7 @@ class Page extends React.PureComponent {
   static defaultProps = {
     minWidth: GRID_MIN_WIDTH,
     maxWidth: GRID_MAX_WIDTH,
+    scrollThrottleWait: SCROLL_THROTTLE_WAIT,
   };
 
   constructor(props) {
@@ -173,7 +176,7 @@ class Page extends React.PureComponent {
       : null;
   }
 
-  _handleScroll() {
+  _handleScroll(e) {
     const containerScrollTop = this._getScrollContainer().scrollTop;
 
     const { minimized } = this.state;
@@ -186,6 +189,10 @@ class Page extends React.PureComponent {
       this.setState({
         minimized: nextDisplayMiniHeader,
       });
+    }
+
+    if (this.props.onScrollChanged) {
+      this.props.onScrollChanged(e);
     }
   }
 
@@ -326,20 +333,22 @@ class Page extends React.PureComponent {
 
   _renderScrollableContainer() {
     return (
-      <div
+      <ScrollableContainerWrapper
         className={classNames(s.scrollableContainer, {
           [s.hasTail]: this._hasTail(),
         })}
-        data-hook="page-scrollable-content"
+        dataHook="page-scrollable-content"
         data-class="page-scrollable-content"
-        ref={r => this._setScrollContainer(r)}
-        onScroll={this._handleScroll}
+        setupRef={r => this._setScrollContainer(r)}
+        onScrollPositionChanged={this.props.onScrollPositionChanged}
+        onScrollChanged={this._handleScroll}
+        scrollThrottleWait={this.props.scrollThrottleWait}
       >
         {this._renderScrollableBackground()}
         {this._renderMinimizationPlaceholder()}
         {this._renderHeaderContainer()}
         {this._renderContentContainer()}
-      </div>
+      </ScrollableContainerWrapper>
     );
   }
 
@@ -524,6 +533,20 @@ Page.propTypes = {
   gradientClassName: PropTypes.string,
   /** Is called with the Page's scrollable content ref **/
   scrollableContentRef: PropTypes.func,
+  /* The wait time value the scroll event will be throttled by */
+  scrollThrottleWait: PropTypes.number,
+  /** A Handler for scroll position changes
+   * ##### Signature:
+   * function({position: {x: positionX, y: positionY}, target: HTMLElement}) => void
+   * * `positionX`: start | middle | end | none (not implemented yet)
+   * * `positionY`: top | middle | bottom | none
+   */
+  onScrollPositionChanged: PropTypes.func,
+  /** A Generic Handler for scroll changes with throttling
+   * ##### Signature:
+   * function({target: HTMLElement}) => void
+   */
+  onScrollChanged: PropTypes.func,
 
   /** Accepts these components as children: `Page.Header`, `Page.Tail`, `Page.Content`, `Page.FixedContent`. Order is insignificant. */
   children: PropTypes.arrayOf((children, key) => {

@@ -11,3 +11,5 @@ export const positionX = {
   END: 'end',
   NONE: 'none',
 };
+
+export const scrollThrottleWait = 100;

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import PageHeader from '../PageHeader';
+import { ScrollChangedData } from '../common/ScrollableContainer';
 
 export type PageProps = {
   dataHook?: string;
@@ -13,6 +14,9 @@ export type PageProps = {
   scrollableContentRef?: (ref: HTMLElement) => void;
   zIndex?: number;
   horizontalScroll?: boolean;
+  scrollThrottleWait?: number;
+  onScrollPositionChanged?: (scrollChangedData: ScrollChangedData) => void;
+  onScrollChanged?: (target: HTMLElement) => void;
 };
 
 export interface ContentProps {
@@ -24,13 +28,13 @@ declare const Content: React.SFC<ContentProps>;
 export interface FixedContentProps {
   children: React.ReactElement;
 }
-declare const FixedContent: React.SFC<FixedContentProps>;
+declare const FixedContent: React.FunctionComponent<FixedContentProps>;
 
 export interface TailProps {
   children: React.ReactElement;
   minimized?: boolean;
 }
-declare const Tail: React.SFC<TailProps>;
+declare const Tail: React.FunctionComponent<TailProps>;
 
 export interface StickyProps {
   children: React.ReactElement | StickyChildrenRenderFn;
